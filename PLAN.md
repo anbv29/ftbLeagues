@@ -18,7 +18,7 @@ Bundesliga, Ligue 1 and the Champions League. Free data, free hosting.
 ## Phase 1 — Ingestion
 
 - [x] **4. ESPN scoreboard adapter** — fetch + defensive parsing
-- [ ] **5. ESPN summary adapter** — key events, commentary, box score
+- [x] **5. ESPN summary adapter** — key events, commentary, box score
 - [ ] **6. Normalizer** — raw key events into MatchEvent
 - [ ] **7. Normalizer edge cases** — own goals, penalties, VAR, extra time
 - [ ] **8. Fixtures + tests** — vitest suite for the normalizer
@@ -54,4 +54,4 @@ Bundesliga, Ligue 1 and the Champions League. Free data, free hosting.
 
 ## Status
 
-Part 4 complete. Awaiting "proceed" for Part 5.
+Part 5 complete. Awaiting "proceed" for Part 6.
