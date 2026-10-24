@@ -9,7 +9,9 @@ export interface Env {
   // Bindings are added as the project grows (D1, Durable Objects, assets).
 }
 
-const startedAt = new Date().toISOString();
+// Workers does not allow clock reads at module scope (it returns the epoch),
+// so the start time is captured lazily on the first request instead.
+let startedAt: string | null = null;
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -23,6 +25,7 @@ export default {
     const { pathname } = new URL(request.url);
 
     if (pathname === "/health") {
+      startedAt ??= new Date().toISOString();
       return json({
         ok: true,
         service: "ftbl",
