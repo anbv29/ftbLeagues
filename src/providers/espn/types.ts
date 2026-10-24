@@ -40,6 +40,7 @@ export interface EspnCompetitor {
 
 export interface EspnCompetition {
   id?: string;
+  date?: string;
   status?: EspnStatus;
   venue?: { id?: string; fullName?: string };
   competitors?: EspnCompetitor[];
@@ -59,4 +60,35 @@ export interface EspnEvent {
 export interface EspnScoreboardResponse {
   events?: EspnEvent[];
   leagues?: Array<{ id?: string; name?: string }>;
+}
+
+export interface EspnKeyEvent {
+  id?: string;
+  type?: { id?: string; text?: string; type?: string };
+  text?: string;
+  shortText?: string;
+  period?: { number?: number };
+  clock?: { value?: number; displayValue?: string };
+  scoringPlay?: boolean;
+  team?: { id?: string; displayName?: string; abbreviation?: string };
+  participants?: Array<{ athlete?: { id?: string; displayName?: string } }>;
+  shootout?: boolean;
+}
+
+export interface EspnCommentaryLine {
+  sequence?: number;
+  time?: { value?: number; displayValue?: string };
+  text?: string;
+  play?: EspnKeyEvent;
+}
+
+export interface EspnSummaryResponse {
+  header?: {
+    id?: string;
+    season?: { year?: number; slug?: string };
+    competitions?: EspnCompetition[];
+  };
+  keyEvents?: EspnKeyEvent[];
+  commentary?: EspnCommentaryLine[];
+  gameInfo?: { venue?: { fullName?: string }; attendance?: number };
 }

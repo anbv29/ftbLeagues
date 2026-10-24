@@ -22,17 +22,14 @@ export function toEspnDate(date: string): string {
   return date.replaceAll("-", "");
 }
 
-/**
- * ESPN's `dates` parameter accepts a single day as YYYYMMDD. Ranges
- * (20261020-20261022) silently return zero events, so never send one.
- */
-export async function fetchScoreboard(
-  leagueCode: string,
-  date: string,
-  options: EspnClientOptions = {},
-): Promise<unknown> {  const baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
-  const url = `${baseUrl}/${leagueCode}/scoreboard?dates=${toEspnDate(date)}`;
+function baseUrl(options: EspnClientOptions): string {
+  return (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+}
 
+async function requestJson(
+  url: string,
+  options: EspnClientOptions,
+): Promise<unknown> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const controller = new AbortController();
   const timer = setTimeout(
@@ -69,4 +66,27 @@ export async function fetchScoreboard(
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * ESPN's `dates` parameter accepts a single day as YYYYMMDD. Ranges
+ * (20261020-20261022) silently return zero events, so never send one.
+ */
+export async function fetchScoreboard(
+  leagueCode: string,
+  date: string,
+  options: EspnClientOptions = {},
+): Promise<unknown> {
+  const url = `${baseUrl(options)}/${leagueCode}/scoreboard?dates=${toEspnDate(date)}`;
+  return requestJson(url, options);
+}
+
+/** Full match detail: key events, commentary, box score, lineups. */
+export async function fetchSummary(
+  leagueCode: string,
+  eventId: string,
+  options: EspnClientOptions = {},
+): Promise<unknown> {
+  const url = `${baseUrl(options)}/${leagueCode}/summary?event=${encodeURIComponent(eventId)}`;
+  return requestJson(url, options);
 }
