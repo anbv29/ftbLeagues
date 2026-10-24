@@ -22,12 +22,15 @@ export function toEspnDate(date: string): string {
   return date.replaceAll("-", "");
 }
 
+/**
+ * ESPN's `dates` parameter accepts a single day as YYYYMMDD. Ranges
+ * (20261020-20261022) silently return zero events, so never send one.
+ */
 export async function fetchScoreboard(
   leagueCode: string,
   date: string,
   options: EspnClientOptions = {},
-): Promise<unknown> {
-  const baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+): Promise<unknown> {  const baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
   const url = `${baseUrl}/${leagueCode}/scoreboard?dates=${toEspnDate(date)}`;
 
   const fetchImpl = options.fetchImpl ?? fetch;
