@@ -1,9 +1,13 @@
 /** ESPN adapter: implements the Provider port using the public scoreboard API. */
 
-import { getProviderCode } from "../../config/competitions";
+import {
+  getProviderCode,
+  resolveCompetition,
+} from "../../config/competitions";
 import type { Provider } from "../../domain/types";
-import { fetchScoreboard } from "./client";
+import { fetchScoreboard, fetchSummary } from "./client";
 import { parseScoreboard } from "./parse";
+import { parseSummary } from "./summary";
 
 export const espnProvider: Provider = {
   id: "espn",
@@ -11,7 +15,7 @@ export const espnProvider: Provider = {
     liveScores: true,
     events: true,
     commentary: true,
-    lineups: true,
+    lineups: false,
     winProbability: false,
   },
 
@@ -25,7 +29,20 @@ export const espnProvider: Provider = {
     return parseScoreboard(payload, competition).matches;
   },
 
-  async getMatchDetail() {
-    throw new Error("ESPN match detail is implemented in part 5");
+  async getMatchDetail(ref) {
+    const competition = resolveCompetition(ref.competitionId);
+    if (!competition) {
+      throw new Error(`unknown competition: ${ref.competitionId}`);
+    }
+
+    const leagueCode = getProviderCode(ref.competitionId, "espn");
+    if (!leagueCode) {
+      throw new Error(
+        `ESPN has no code for competition ${ref.competitionId}`,
+      );
+    }
+
+    const payload = await fetchSummary(leagueCode, ref.externalId);
+    return parseSummary(payload, ref, competition).detail;
   },
 };
