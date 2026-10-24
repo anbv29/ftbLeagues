@@ -12,7 +12,7 @@ Bundesliga, Ligue 1 and the Champions League. Free data, free hosting.
 ## Phase 0 — Foundation
 
 - [x] **1. Scaffold** — package.json, tsconfig, wrangler, health route, docs
-- [ ] **2. Domain types** — Match, Team, Competition, MatchEvent, Provider
+- [x] **2. Domain types** — Match, Team, Competition, MatchEvent, Provider
 - [ ] **3. Competition registry** — the six leagues, codes, seasons, config
 
 ## Phase 1 — Ingestion
@@ -54,4 +54,4 @@ Bundesliga, Ligue 1 and the Champions League. Free data, free hosting.
 
 ## Status
 
-Part 1 complete. Awaiting "proceed" for Part 2.
+Part 2 complete. Awaiting "proceed" for Part 3.
