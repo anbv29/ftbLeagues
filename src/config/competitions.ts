@@ -93,6 +93,16 @@ export function getCompetitionDefinition(
   return found ?? null;
 }
 
+/** The code a given provider uses for a competition, if it covers it. */
+export function getProviderCode(
+  competitionId: string,
+  providerId: string,
+): string | null {
+  return (
+    getCompetitionDefinition(competitionId)?.providerCodes[providerId] ?? null
+  );
+}
+
 /** Resolve a competition for a date, filling in the current season. */
 export function resolveCompetition(
   id: string,
