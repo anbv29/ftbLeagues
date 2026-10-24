@@ -5,6 +5,8 @@
  * exposes a health check so we can verify the runtime end to end.
  */
 
+import { listCompetitions } from "./config/competitions";
+
 export interface Env {
   // Bindings are added as the project grows (D1, Durable Objects, assets).
 }
@@ -33,6 +35,10 @@ export default {
         startedAt,
         now: new Date().toISOString(),
       });
+    }
+
+    if (pathname === "/api/competitions") {
+      return json({ competitions: listCompetitions() });
     }
 
     return json({ error: "not_found", path: pathname }, 404);
