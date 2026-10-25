@@ -27,31 +27,35 @@ Bundesliga, Ligue 1 and the Champions League. Free data, free hosting.
 
 ## Phase 2 — Engine
 
-- [ ] **11. Poller: fixtures** — six scoreboards into the database
-- [ ] **12. Poller: live detail** — summary fetch, diff, event writes
-- [ ] **13. Resilience** — rate limits, backoff, caching, per-league isolation
-- [ ] **14. HTTP API** — router, /api/matches, /api/matches/:id
-- [ ] **15. Win probability** — model v1 from score, minute, red cards
+- [x] **11. Poller: fixtures** — six scoreboards into the database
+- [x] **12. Poller: live detail** — summary fetch, diff, event writes
+- [x] **13. Resilience** — rate limits, backoff, caching, per-league isolation
+- [x] **14. HTTP API** — router, /api/matches, /api/matches/:id
+- [x] **15. Win probability** — model v1 from score, minute, red cards
 
 ## Phase 3 — Real time
 
-- [ ] **16. Durable Object room** — WebSocket accept, hibernation, snapshot
-- [ ] **17. Broadcast pipeline** — poller to room to clients
-- [ ] **18. Room protocol** — message types, heartbeat, reconnect, dedupe
-- [ ] **19. Rooms API** — create/join, nicknames, share codes
+- [x] **16. Durable Object room** — WebSocket accept, hibernation, snapshot
+- [x] **17. Broadcast pipeline** — poller to room to clients
+- [x] **18. Room protocol** — message types, heartbeat, reconnect, dedupe
+- [x] **19. Rooms API** — create/join, nicknames, share codes
 
 ## Phase 4 — Frontend
 
-- [ ] **20. Web scaffold** — Vite, React, TypeScript, design tokens
-- [ ] **21. Match list** — live states, competition filter, auto-refresh
-- [ ] **22. Match room** — scoreboard, clock, event feed
-- [ ] **23. Live visuals** — win probability bar, momentum, animations
-- [ ] **24. Realtime client** — reconnect, optimistic UI, room presence
+- [x] **20. Web scaffold** — Vite, React, TypeScript, design tokens
+- [x] **21. Match list** — live states, competition filter, auto-refresh
+- [x] **22. Match room** — scoreboard, clock, event feed
+- [x] **23. Live visuals** — win probability bar, momentum, animations
+- [x] **24. Realtime client** — reconnect, optimistic UI, room presence
 
 ## Phase 5 — Ship
 
-- [ ] **25. Deploy** — cron trigger, CI, README, mock mode, final QA
+- [x] **25. Deploy** — cron trigger, CI, README, mock mode, final QA
 
 ## Status
 
-Parts 9-10 complete. Building the poller (Parts 11-13).
+All 25 parts complete. The Worker, D1 schema, Durable Object rooms, ESPN
+ingestion, API, React frontend, local demo seed, tests and deployment workflow
+are in place. The build passes locally and is ready for a Cloudflare account:
+replace the placeholder D1 `database_id`, run the remote migration, then
+`npm run deploy`. See [README.md](./README.md) for the full walkthrough.
