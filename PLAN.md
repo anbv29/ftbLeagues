@@ -20,8 +20,8 @@ Bundesliga, Ligue 1 and the Champions League. Free data, free hosting.
 - [x] **4. ESPN scoreboard adapter** — fetch + defensive parsing
 - [x] **5. ESPN summary adapter** — key events, commentary, box score
 - [x] **6. Normalizer** — raw key events into MatchEvent
-- [ ] **7. Normalizer edge cases** — own goals, penalties, VAR, extra time
-- [ ] **8. Fixtures + tests** — vitest suite for the normalizer
+- [x] **7. Normalizer edge cases** — own goals, penalties, VAR, extra time
+- [x] **8. Fixtures + tests** — vitest suite for the normalizer
 - [ ] **9. D1 schema** — tables, indexes, local database setup
 - [ ] **10. Repository layer** — upserts, idempotent event writes, queries
 
@@ -54,4 +54,4 @@ Bundesliga, Ligue 1 and the Champions League. Free data, free hosting.
 
 ## Status
 
-Part 6 complete. Awaiting "proceed" for Part 7.
+Part 8 complete. Starting Part 9 (D1 schema).
