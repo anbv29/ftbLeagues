@@ -22,8 +22,8 @@ Bundesliga, Ligue 1 and the Champions League. Free data, free hosting.
 - [x] **6. Normalizer** — raw key events into MatchEvent
 - [x] **7. Normalizer edge cases** — own goals, penalties, VAR, extra time
 - [x] **8. Fixtures + tests** — vitest suite for the normalizer
-- [ ] **9. D1 schema** — tables, indexes, local database setup
-- [ ] **10. Repository layer** — upserts, idempotent event writes, queries
+- [x] **9. D1 schema** — tables, indexes, local database setup
+- [x] **10. Repository layer** — upserts, idempotent event writes, queries
 
 ## Phase 2 — Engine
 
@@ -54,4 +54,4 @@ Bundesliga, Ligue 1 and the Champions League. Free data, free hosting.
 
 ## Status
 
-Part 8 complete. Starting Part 9 (D1 schema).
+Parts 9-10 complete. Building the poller (Parts 11-13).
