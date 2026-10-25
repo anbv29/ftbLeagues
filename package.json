@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:init": "wrangler d1 execute ftbl --local --file=migrations/0001_init.sql",
-    "db:migrate": "wrangler d1 migrations apply ftbl --local"
+    "db:migrate": "wrangler d1 migrations apply ftbl --local",
+    "db:demo": "wrangler d1 execute ftbl --local --file=scripts/demo.sql",
+    "db:demo:clear": "wrangler d1 execute ftbl --local --file=scripts/demo-clear.sql"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261024.1",

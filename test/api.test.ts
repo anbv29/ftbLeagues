@@ -245,6 +245,73 @@ describe("handleApi", () => {
     expect(body.serverTime).toBe(NOW.toISOString());
   });
 
+  it("adds and broadcasts a demo goal in local development", async () => {
+    const { repo } = await setup();
+    const demo: Match = {
+      ...match(
+        "900",
+        "eng.1",
+        "2026-10-25T16:30:00.000Z",
+        "live",
+        { home: 1, away: 0 },
+      ),
+      id: "demo:eng.1:ars-liv",
+      externalId: "demo-ars-liv",
+      clock: { minute: 67, addedTime: 0, display: "67'", running: true },
+    };
+    await repo.upsertMatches([demo]);
+
+    let broadcasts = 0;
+    const local = await handleApi(
+      new Request(
+        "http://127.0.0.1:8787/api/dev/demo-goal?matchId=demo%3Aeng.1%3Aars-liv&side=away&player=Salah",
+        { method: "POST" },
+      ),
+      {
+        env: ENV,
+        repo,
+        now: () => NOW,
+        onUpdate: () => {
+          broadcasts += 1;
+        },
+      },
+    );
+
+    expect(local?.status).toBe(200);
+    const body = (await local!.json()) as {
+      match: { score: { home: number; away: number } };
+      event: { type: string; minute: number; player?: string };
+    };
+    expect(body.match.score).toEqual({ home: 1, away: 1 });
+    expect(body.event).toMatchObject({
+      type: "goal",
+      minute: 68,
+      player: "Salah",
+    });
+    expect(broadcasts).toBe(1);
+
+    const stored = await repo.getMatch("demo:eng.1:ars-liv");
+    expect(stored?.score).toEqual({ home: 1, away: 1 });
+    const events = await repo.getEvents("demo:eng.1:ars-liv");
+    expect(events.at(-1)?.externalId).toBe("demo-goal-1");
+
+    const remote = await handleApi(
+      get("/api/dev/demo-goal?matchId=demo%3Aeng.1%3Aars-liv", {
+        method: "POST",
+      }),
+      { env: ENV, repo, now: () => NOW },
+    );
+    expect(remote?.status).toBe(404);
+
+    const ordinaryMatch = await handleApi(
+      new Request("http://127.0.0.1:8787/api/dev/demo-goal?matchId=espn%3A401", {
+        method: "POST",
+      }),
+      { env: ENV, repo, now: () => NOW },
+    );
+    expect(ordinaryMatch?.status).toBe(400);
+  });
+
   it("exposes a poll trigger only to local development", async () => {
     const { repo } = await setup();
     const provider: Provider = {

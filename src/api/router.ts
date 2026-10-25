@@ -7,7 +7,7 @@
 
 import { isKnownCompetition, listCompetitions } from "../config/competitions";
 import type { MatchRepository } from "../data/repository";
-import type { Provider } from "../domain/types";
+import type { Match, MatchEvent, Provider } from "../domain/types";
 import { generateRoomCode, isRoomCode } from "../domain/room-code";
 import { pollOnce } from "../engine/poller";
 import type { MatchUpdate } from "../engine/poller";
@@ -37,6 +37,11 @@ function isIsoDate(value: string): boolean {
 
 function isLocal(url: URL): boolean {
   return url.hostname === "127.0.0.1" || url.hostname === "localhost";
+}
+
+function isDevRequest(url: URL, env: Env): boolean {
+  if (env.ENVIRONMENT === "production") return false;
+  return isLocal(url) || env.ENVIRONMENT === "development";
 }
 
 async function readJson(request: Request): Promise<unknown> {
@@ -160,12 +165,90 @@ export async function handleApi(
     return json({ room, match, serverTime });
   }
 
-  // Local development helper: force a poll without waiting for cron.
-  if (request.method === "POST" && path === "/api/dev/poll") {
-    if (deps.env.ENVIRONMENT === "production") {
+  // Local demo helper: add a goal to a seeded demo match and broadcast it, so
+  // the live update path and goal celebration can be exercised without a real
+  // match. It only ever touches `demo:` rows.
+  if (request.method === "POST" && path === "/api/dev/demo-goal") {
+    if (!isDevRequest(url, deps.env)) {
       return error(404, "not_found");
     }
-    if (!isLocal(url) && deps.env.ENVIRONMENT !== "development") {
+
+    const matchId = url.searchParams.get("matchId");
+    if (!matchId?.startsWith("demo:")) {
+      return error(400, "demo_match_required", "matchId must start with demo:");
+    }
+
+    const stored = await deps.repo.getMatch(matchId);
+    if (!stored) return error(404, "match_not_found");
+    if (stored.status !== "live" && stored.status !== "halftime") {
+      return error(409, "demo_match_not_live", "start the demo match first");
+    }
+
+    const side = url.searchParams.get("side") === "away" ? "away" : "home";
+    const events = await deps.repo.getEvents(matchId);
+    const sequence =
+      events.reduce((max, event) => Math.max(max, event.sequence), 0) + 1;
+    const minute = Math.max(1, stored.clock.minute + 1);
+    const score =
+      side === "home"
+        ? { home: stored.score.home + 1, away: stored.score.away }
+        : { home: stored.score.home, away: stored.score.away + 1 };
+    const requestedPlayer = url.searchParams.get("player")?.trim().slice(0, 60);
+    const player =
+      requestedPlayer || (side === "home" ? stored.home.name : stored.away.name);
+    const createdAt = now.toISOString();
+
+    const event: MatchEvent = {
+      id: `${matchId}:demo-goal-${sequence}`,
+      matchId,
+      externalId: `demo-goal-${sequence}`,
+      type: "goal",
+      minute,
+      addedTime: 0,
+      sequence,
+      side,
+      player,
+      detail: "Demo goal",
+      scoreAfter: score,
+      createdAt,
+    };
+
+    const updated: Match = {
+      id: stored.id,
+      competitionId: stored.competitionId,
+      externalId: stored.externalId,
+      season: stored.season,
+      kickoff: stored.kickoff,
+      status: "live",
+      clock: {
+        minute,
+        addedTime: 0,
+        display: `${minute}'`,
+        running: true,
+      },
+      home: stored.home,
+      away: stored.away,
+      score,
+      venue: stored.venue,
+      updatedAt: createdAt,
+    };
+
+    await deps.repo.upsertMatches([updated]);
+    await deps.repo.insertEvents([event]);
+    const probability = computeWinProbability(updated, [...events, event]);
+    await deps.repo.setProbability(matchId, probability);
+    await deps.onUpdate?.({
+      match: updated,
+      events: [event],
+      probability,
+    });
+
+    return json({ match: updated, event, probability, serverTime });
+  }
+
+  // Local development helper: force a poll without waiting for cron.
+  if (request.method === "POST" && path === "/api/dev/poll") {
+    if (!isDevRequest(url, deps.env)) {
       return error(404, "not_found");
     }
 
