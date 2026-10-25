@@ -52,6 +52,12 @@ export default {
     });
     if (response) return response;
 
+    // Hash routing means every client route is "/", but serving the built
+    // single-page app here also covers direct GETs for any other path.
+    if (env.ASSETS) {
+      return env.ASSETS.fetch(request);
+    }
+
     return json({ error: "not_found", path: pathname }, 404);
   },
 

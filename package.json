@@ -6,8 +6,11 @@
   "description": "Real-time football match rooms for the top five European leagues and the Champions League.",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "build": "wrangler deploy --dry-run --outdir=dist",
+    "dev:web": "vite web",
+    "build:web": "vite build web",
+    "typecheck:web": "tsc -p web/tsconfig.json --noEmit",
+    "deploy": "npm run build:web && wrangler deploy",
+    "build": "npm run build:web && wrangler deploy --dry-run --outdir=dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:init": "wrangler d1 execute ftbl --local --file=migrations/0001_init.sql",
@@ -15,8 +18,18 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261024.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5",
     "wrangler": "^4.152.0"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }
