@@ -68,8 +68,47 @@ describe("parseSummary", () => {
     expect(result.keyEvents[4]?.type?.type).toBe("substitution");
   });
 
-  it("leaves domain events empty until the normalizer is wired", () => {
-    expect(detail.events).toEqual([]);
+  it("normalizes key events into the domain feed", () => {
+    expect(detail.events).toHaveLength(6);
+    expect(detail.events.map((event) => event.type)).toEqual([
+      "kickoff",
+      "goal",
+      "yellow_card",
+      "halftime",
+      "substitution",
+      "fulltime",
+    ]);
+
+    expect(detail.events[1]).toMatchObject({
+      id: "espn:401879256:54146134",
+      minute: 6,
+      addedTime: 0,
+      side: "home",
+      player: "Nicolas Jackson",
+      assist: "John McGinn",
+      scoreAfter: { home: 1, away: 0 },
+    });
+
+    expect(detail.events[2]).toMatchObject({
+      type: "yellow_card",
+      minute: 32,
+      side: "away",
+      player: "Marc Guéhi",
+    });
+
+    expect(detail.events[3]).toMatchObject({
+      type: "halftime",
+      minute: 45,
+      addedTime: 2,
+      side: null,
+    });
+
+    expect(detail.events[5]).toMatchObject({
+      type: "fulltime",
+      minute: 90,
+      addedTime: 5,
+      side: null,
+    });
   });
 
   it("returns null when the header is unusable", () => {
