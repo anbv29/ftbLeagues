@@ -198,6 +198,7 @@ describe("ESPN client", () => {
       fetchScoreboard("eng.1", "2026-10-24", {
         fetchImpl: fetchImpl as unknown as typeof fetch,
         timeoutMs: 1000,
+        retries: 0,
       }),
     ).rejects.toMatchObject({
       name: "ProviderRequestError",
@@ -215,11 +216,44 @@ describe("ESPN client", () => {
     const error = await fetchScoreboard("eng.1", "2026-10-24", {
       fetchImpl: fetchImpl as unknown as typeof fetch,
       timeoutMs: 1000,
+      retries: 0,
     }).catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(ProviderRequestError);
     expect((error as ProviderRequestError).status).toBeUndefined();
     expect((error as ProviderRequestError).cause).toBe(failure);
+  });
+
+  it("retries a transient 5xx and then succeeds", async () => {
+    let attempts = 0;
+    const fetchImpl = vi.fn(async () => {
+      attempts += 1;
+      if (attempts === 1) return new Response("overloaded", { status: 503 });
+      return new Response(JSON.stringify({ events: [] }), { status: 200 });
+    });
+
+    const payload = await fetchScoreboard("eng.1", "2026-10-24", {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      retryDelayMs: 0,
+    });
+
+    expect(payload).toEqual({ events: [] });
+    expect(attempts).toBe(2);
+  });
+
+  it("does not retry a permanent 4xx", async () => {
+    const fetchImpl = vi.fn(
+      async () => new Response("missing", { status: 404 }),
+    );
+
+    await expect(
+      fetchScoreboard("eng.1", "2026-10-24", {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        retryDelayMs: 0,
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
   });
 });
 
