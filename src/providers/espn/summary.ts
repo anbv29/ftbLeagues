@@ -5,8 +5,8 @@
  * commentary and box score. It is also large (~400KB), so only the pieces the
  * room needs are kept.
  *
- * Key events are extracted here but mapped into domain events by the
- * normalizer (next part); `detail.events` stays empty until then.
+ * Key events are extracted here and mapped into domain events by the
+ * normalizer, so a summary parse yields a feed ready to broadcast.
  */
 
 import { parseClockDisplay } from "../../domain/clock";
@@ -31,6 +31,7 @@ import {
   parseScore,
   parseTeam,
 } from "./shared";
+import { normalizeKeyEvents } from "./normalize";
 import type { JsonRecord } from "./shared";
 import type { EspnKeyEvent } from "./types";
 export interface SummaryParseResult {
@@ -105,8 +106,7 @@ export function parseSummary(
   return {
     detail: {
       match,
-      // Filled by the normalizer in part 6.
-      events: [],
+      events: normalizeKeyEvents(keyEvents, match, now),
       commentary: parseCommentary(commentaryRaw, matchId),
     },
     keyEvents,
