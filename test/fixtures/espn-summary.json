@@ -109,6 +109,32 @@
       "shootout": false
     },
     {
+      "id": "54149975",
+      "type": { "id": "70", "text": "Goal - Header", "type": "goal---header" },
+      "text": "Goal! Aston Villa 1, Manchester City 1. Erling Haaland (Manchester City) header from very close range to the bottom left corner. Assisted by Iliman Ndiaye.",
+      "clock": { "value": 3120, "displayValue": "52'" },
+      "scoringPlay": true,
+      "team": { "id": "382", "displayName": "Manchester City" },
+      "participants": [
+        { "athlete": { "id": "253989", "displayName": "Erling Haaland" } },
+        { "athlete": { "id": "268641", "displayName": "Iliman Ndiaye" } }
+      ],
+      "shootout": false
+    },
+    {
+      "id": "54150525",
+      "type": { "id": "70", "text": "Goal", "type": "goal" },
+      "text": "Goal! Aston Villa 2, Manchester City 1. Nicolas Jackson (Aston Villa) right footed shot from the centre of the box to the bottom right corner. Assisted by Ibrahim Mbaye.",
+      "clock": { "value": 3591, "displayValue": "60'" },
+      "scoringPlay": true,
+      "team": { "id": "362", "displayName": "Aston Villa" },
+      "participants": [
+        { "athlete": { "id": "308524", "displayName": "Nicolas Jackson" } },
+        { "athlete": { "id": "388522", "displayName": "Ibrahim Mbaye" } }
+      ],
+      "shootout": false
+    },
+    {
       "id": "54153826",
       "type": {
         "id": "83",

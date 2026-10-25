@@ -12,6 +12,7 @@ import type {
   Match,
   MatchEvent,
   MatchEventType,
+  Score,
   TeamSide,
 } from "../../domain/types";
 import { isGoalEvent } from "../../domain/guards";
@@ -28,10 +29,13 @@ const EVENT_TYPES: Record<string, MatchEventType> = {
   "penalty---missed": "penalty_missed",
   "yellow-card": "yellow_card",
   "red-card": "red_card",
+  "second-yellow": "second_yellow",
   substitution: "substitution",
   halftime: "halftime",
   "end-regular-time": "fulltime",
   "end-extra-time": "fulltime",
+  "end-penalty-shootout": "fulltime",
+  "penalty---saved": "penalty_missed",
   var: "var",
   "corner-awarded": "corner",
   "shot-on-target": "shot",
@@ -56,14 +60,37 @@ export function mapEventType(slug: string | null | undefined): MatchEventType | 
   // Variants such as "goal---header", "goal---volley", "goal---free-kick".
   if (normalized.startsWith("goal---")) return "goal";
 
+  // "var", "var---goal-awarded", "var---goal-cancelled", ...
+  if (normalized === "var" || normalized.startsWith("var---")) return "var";
+
   if (normalized.startsWith("penalty---")) {
-    if (normalized.includes("miss")) return "penalty_missed";
+    if (
+      normalized.includes("miss") ||
+      normalized.includes("saved") ||
+      normalized.includes("save")
+    ) {
+      return "penalty_missed";
+    }
     if (normalized.includes("scored") || normalized.includes("goal")) {
       return "penalty_goal";
     }
   }
 
   return null;
+}
+
+/**
+ * A second bookable offence arrives as "red-card" with prose explaining it.
+ * The slug alone cannot tell the difference, so the text is required.
+ */
+export function refineEventType(
+  type: MatchEventType,
+  text: string | undefined,
+): MatchEventType {
+  if (type === "red_card" && /second\s+yellow/i.test(text ?? "")) {
+    return "second_yellow";
+  }
+  return type;
 }
 
 function sideFor(
@@ -93,13 +120,19 @@ export function normalizeKeyEvents(
   now: Date = new Date(),
 ): MatchEvent[] {
   const normalized: MatchEvent[] = [];
+  const seen = new Set<string>();
   let homeScore = 0;
   let awayScore = 0;
 
   events.forEach((event, index) => {
     const externalId = idString(event.id);
-    const type = mapEventType(event.type?.type);
-    if (!externalId || !type) return;
+    const mapped = mapEventType(event.type?.type);
+    if (!externalId || !mapped || seen.has(externalId)) return;
+    seen.add(externalId);
+
+    const type = refineEventType(mapped, event.text);
+    const slug = (event.type?.type ?? "").toLowerCase();
+    const shootout = event.shootout === true || slug.includes("shootout");
 
     const clock = parseClockDisplay(
       event.clock?.displayValue,
@@ -123,7 +156,9 @@ export function normalizeKeyEvents(
       createdAt: now.toISOString(),
     };
 
-    if (isGoalEvent(type) && side) {
+    // Shootout kicks are recorded but never change the match score; a shootout
+    // is a separate competition from the 120 minutes before it.
+    if (isGoalEvent(type) && side && !shootout) {
       if (side === "home") homeScore += 1;
       else awayScore += 1;
       line.scoreAfter = { home: homeScore, away: awayScore };
@@ -133,4 +168,25 @@ export function normalizeKeyEvents(
   });
 
   return normalized;
+}
+
+/** The score implied by the normalized feed, i.e. the last goal's scoreAfter. */
+export function computedFinalScore(events: MatchEvent[]): Score {
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const score = events[index]?.scoreAfter;
+    if (score) return score;
+  }
+  return { home: 0, away: 0 };
+}
+
+/**
+ * Whether the feed's goals account for the provider's score. Useful as a
+ * drift alarm on finished matches; on live matches the provider often updates
+ * the score before the key event arrives, so a temporary mismatch is normal.
+ */
+export function scoresAgree(events: MatchEvent[], match: Match): boolean {
+  const computed = computedFinalScore(events);
+  return (
+    computed.home === match.score.home && computed.away === match.score.away
+  );
 }

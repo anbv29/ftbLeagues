@@ -124,6 +124,8 @@ describe("parseMatchStatus", () => {
     ["STATUS_ABANDONED", "post", "abandoned"],
     ["STATUS_CANCELED", "post", "abandoned"],
     ["STATUS_SUSPENDED", "in", "suspended"],
+    ["STATUS_EXTRA_TIME", "in", "live"],
+    ["STATUS_PENALTY_SHOOTOUT", "in", "live"],
   ];
 
   it.each(cases)("maps %s in state %s to %s", (name, state, expected) => {

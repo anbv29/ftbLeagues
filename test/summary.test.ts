@@ -3,6 +3,7 @@ import summaryFixture from "./fixtures/espn-summary.json";
 import { resolveCompetition } from "../src/config/competitions";
 import { espnProvider } from "../src/providers/espn";
 import { fetchSummary } from "../src/providers/espn/client";
+import { scoresAgree } from "../src/providers/espn/normalize";
 import { parseSummary } from "../src/providers/espn/summary";
 
 const NOW = new Date("2026-10-24T18:00:00Z");
@@ -63,19 +64,22 @@ describe("parseSummary", () => {
   });
 
   it("extracts raw key events for the normalizer", () => {
-    expect(result.keyEvents).toHaveLength(6);
+    expect(result.keyEvents).toHaveLength(8);
     expect(result.keyEvents[1]?.type?.type).toBe("goal");
     expect(result.keyEvents[4]?.type?.type).toBe("substitution");
   });
 
   it("normalizes key events into the domain feed", () => {
-    expect(detail.events).toHaveLength(6);
+    expect(detail.events).toHaveLength(8);
+    expect(scoresAgree(detail.events, detail.match)).toBe(true);
     expect(detail.events.map((event) => event.type)).toEqual([
       "kickoff",
       "goal",
       "yellow_card",
       "halftime",
       "substitution",
+      "goal",
+      "goal",
       "fulltime",
     ]);
 
@@ -104,6 +108,22 @@ describe("parseSummary", () => {
     });
 
     expect(detail.events[5]).toMatchObject({
+      type: "goal",
+      minute: 52,
+      side: "away",
+      player: "Erling Haaland",
+      assist: "Iliman Ndiaye",
+      scoreAfter: { home: 1, away: 1 },
+    });
+
+    expect(detail.events[6]).toMatchObject({
+      type: "goal",
+      minute: 60,
+      side: "home",
+      scoreAfter: { home: 2, away: 1 },
+    });
+
+    expect(detail.events[7]).toMatchObject({
       type: "fulltime",
       minute: 90,
       addedTime: 5,
@@ -117,6 +137,28 @@ describe("parseSummary", () => {
       parseSummary({ header: { competitions: [] } }, ref, competition, NOW)
         .detail,
     ).toBeNull();
+  });
+
+  it("handles an abandoned match with no events", () => {
+    const abandoned = {
+      ...summaryFixture,
+      header: {
+        ...summaryFixture.header,
+        competitions: [
+          {
+            ...summaryFixture.header.competitions[0],
+            status: { type: { name: "STATUS_ABANDONED", state: "post" } },
+          },
+        ],
+      },
+      keyEvents: [],
+      commentary: [],
+    };
+
+    const parsed = parseSummary(abandoned, ref, competition, NOW);
+
+    expect(parsed.detail?.match.status).toBe("abandoned");
+    expect(parsed.detail?.events).toEqual([]);
   });
 
   it("carries the last known minute for untimed commentary", () => {

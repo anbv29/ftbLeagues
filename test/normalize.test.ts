@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import summaryFixture from "./fixtures/espn-summary.json";
 import { resolveCompetition } from "../src/config/competitions";
-import { mapEventType, normalizeKeyEvents } from "../src/providers/espn/normalize";
+import {
+  computedFinalScore,
+  mapEventType,
+  normalizeKeyEvents,
+  refineEventType,
+  scoresAgree,
+} from "../src/providers/espn/normalize";
 import { parseSummary } from "../src/providers/espn/summary";
 import type { EspnKeyEvent } from "../src/providers/espn/types";
 
@@ -43,7 +49,13 @@ describe("mapEventType", () => {
     ["substitution", "substitution"],
     ["halftime", "halftime"],
     ["start-2nd-half", "kickoff"],
+    ["start-extra-time", "kickoff"],
     ["end-regular-time", "fulltime"],
+    ["end-extra-time", "fulltime"],
+    ["end-penalty-shootout", "fulltime"],
+    ["penalty---saved", "penalty_missed"],
+    ["penalty---shootout-scored", "penalty_goal"],
+    ["var---goal-cancelled", "var"],
     ["start-delay", null],
     ["end-delay", null],
     ["something-unknown", null],
@@ -56,6 +68,29 @@ describe("mapEventType", () => {
   it("treats missing slugs as unmappable", () => {
     expect(mapEventType(undefined)).toBeNull();
     expect(mapEventType("")).toBeNull();
+  });
+});
+
+describe("refineEventType", () => {
+  it("turns a red card with second-yellow prose into second_yellow", () => {
+    expect(
+      refineEventType(
+        "red_card",
+        "Second yellow card to Cole Palmer (Chelsea) for a bad foul.",
+      ),
+    ).toBe("second_yellow");
+  });
+
+  it("keeps a straight red card as red_card", () => {
+    expect(
+      refineEventType("red_card", "Cole Palmer (Chelsea) is shown the red card."),
+    ).toBe("red_card");
+  });
+
+  it("leaves other event types untouched", () => {
+    expect(refineEventType("goal", "Goal! Aston Villa 1, Manchester City 0.")).toBe(
+      "goal",
+    );
   });
 });
 
@@ -204,5 +239,94 @@ describe("normalizeKeyEvents", () => {
 
     expect(events[0]?.player).toBe("Federico Redondo");
     expect(events[0]?.assist).toBeUndefined();
+  });
+});
+
+describe("normalizeKeyEvents edge cases", () => {
+  it("detects a second yellow from the event prose", () => {
+    const events = normalizeKeyEvents(
+      [
+        keyEvent({
+          id: "rc1",
+          type: { type: "red-card", text: "Red Card" },
+          text: "Second yellow card to Cole Palmer (Chelsea) for a bad foul.",
+          team: { id: "362" },
+          participants: [{ athlete: { displayName: "Cole Palmer" } }],
+        }),
+      ],
+      match,
+      NOW,
+    );
+
+    expect(events[0]).toMatchObject({
+      type: "second_yellow",
+      side: "home",
+      player: "Cole Palmer",
+    });
+  });
+
+  it("never lets shootout kicks change the match score", () => {
+    const events = normalizeKeyEvents(
+      [
+        keyEvent({
+          id: "et1",
+          team: { id: "362" },
+          clock: { value: 6300, displayValue: "105'" },
+        }),
+        keyEvent({
+          id: "so1",
+          type: { type: "penalty---shootout-scored", text: "Shootout" },
+          team: { id: "362" },
+          shootout: true,
+          clock: { value: 7200, displayValue: "120'" },
+        }),
+        keyEvent({
+          id: "so2",
+          type: { type: "penalty---shootout-missed", text: "Shootout" },
+          team: { id: "382" },
+          shootout: true,
+          clock: { value: 7200, displayValue: "120'" },
+        }),
+      ],
+      match,
+      NOW,
+    );
+
+    expect(events.map((event) => event.type)).toEqual([
+      "goal",
+      "penalty_goal",
+      "penalty_missed",
+    ]);
+    expect(events[1]?.scoreAfter).toBeUndefined();
+    expect(computedFinalScore(events)).toEqual({ home: 1, away: 0 });
+  });
+
+  it("deduplicates repeated provider ids", () => {
+    const events = normalizeKeyEvents(
+      [keyEvent({ id: "dup" }), keyEvent({ id: "dup" })],
+      match,
+      NOW,
+    );
+
+    expect(events).toHaveLength(1);
+  });
+
+  it("leaves goals with an unknown team unattributed", () => {
+    const events = normalizeKeyEvents(
+      [keyEvent({ id: "g1", team: { id: "999" } })],
+      match,
+      NOW,
+    );
+
+    expect(events[0]?.side).toBeNull();
+    expect(events[0]?.scoreAfter).toBeUndefined();
+    expect(computedFinalScore(events)).toEqual({ home: 0, away: 0 });
+  });
+
+  it("reports whether the feed accounts for the provider score", () => {
+    expect(scoresAgree(fixture.events, match)).toBe(true);
+
+    const withoutGoals = normalizeKeyEvents([], match, NOW);
+    expect(scoresAgree(withoutGoals, match)).toBe(false);
   });
 });
