@@ -2,6 +2,8 @@
 
 **Every match, one room.**
 
+[![CI](https://github.com/anbv29/ftbLeagues/actions/workflows/ci.yml/badge.svg)](https://github.com/anbv29/ftbLeagues/actions/workflows/ci.yml)
+
 ftbl is a real-time football matchday app for the Premier League, La Liga,
 Serie A, Bundesliga, Ligue 1 and the Champions League. Follow the live card,
 open a room for any match, and watch the score, clock, key moments and win
@@ -294,8 +296,9 @@ test/           Vitest suites and ESPN fixtures
 ## Status
 
 Parts 1–25 of the build plan are complete. See [PLAN.md](./PLAN.md) for the
-part-by-part breakdown. Tests, typechecks and production builds pass locally;
-the repository is deployment-ready, but not deployed from this environment.
+part-by-part breakdown. Tests, typechecks and production builds pass locally,
+and the GitHub Actions workflow is green; the repository is deployment-ready,
+but not deployed from this environment.
 
 Football data comes from ESPN's public endpoints. This project is not
 affiliated with ESPN, UEFA or any league.
